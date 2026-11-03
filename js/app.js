@@ -1,4 +1,4 @@
-import { TEAMS, LEVELS, EXERCISES } from "../data/exercises.js";
+import { TEAMS, LEVELS, EXERCISES, GUION, loadGuion } from "../data/exercises.js";
 import { ADMIN_CODE } from "./config.js";
 import { createStore } from "./store.js";
 
@@ -14,7 +14,44 @@ function safeGet(k) { try { return localStorage.getItem(k); } catch { return nul
 function safeSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").split(/\n\n+/).map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+// Markdown mínimo: párrafos, listas numeradas/con viñetas (una anidación), bloques ``` , > citas, **negrita** y `código`.
+const inline = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?![*\w])/g, "$1<i>$2</i>");
+function md(src) {
+  let html = "", para = [], quote = [], list = null, sub = false, li = false, code = null;
+  const flushPara = () => { if (para.length) html += `<p>${para.join("<br>")}</p>`; para = []; };
+  const flushQuote = () => { if (quote.length) html += `<blockquote>${quote.join("<br>")}</blockquote>`; quote = []; };
+  const closeSub = () => { if (sub) { html += "</li></ul>"; sub = false; li = true; } };
+  const closeLi = () => { closeSub(); if (li) { html += "</li>"; li = false; } };
+  const closeList = () => { closeLi(); if (list) { html += `</${list}>`; list = null; } };
+  const flushAll = () => { flushPara(); flushQuote(); closeList(); };
+
+  for (const line of String(src).split("\n")) {
+    if (code) {
+      if (/^\s*```/.test(line)) { html += `${esc(code.join("\n"))}</code></pre>`; code = null; }
+      else code.push(line.slice(Math.min(code.indent, line.length - line.trimStart().length)));
+      continue;
+    }
+    const fence = line.match(/^(\s*)```/);
+    if (fence) { flushPara(); flushQuote(); html += "<pre><code>"; code = []; code.indent = fence[1].length; continue; }
+    if (!line.trim()) { flushPara(); flushQuote(); continue; }
+    const q = line.match(/^>\s?(.*)$/);
+    if (q) { flushPara(); closeList(); quote.push(inline(q[1])); continue; }
+    const num = line.match(/^(\d+)\.\s+(.*)$/);
+    if (num) { flushPara(); flushQuote(); closeLi(); if (list !== "ol") { closeList(); html += `<ol start="${num[1]}">`; list = "ol"; } html += `<li>${inline(num[2])}`; li = true; continue; }
+    const bul = line.match(/^(\s*)[*-]\s+(.*)$/);
+    if (bul) {
+      flushPara(); flushQuote();
+      if (list === "ol" && li) { if (!sub) { html += "<ul>"; sub = true; } else html += "</li>"; html += `<li>${inline(bul[2])}`; }
+      else { if (list !== "ul") { closeList(); html += "<ul>"; list = "ul"; } else html += "</li>"; html += `<li>${inline(bul[2])}`; li = true; }
+      continue;
+    }
+    if (list && li && /^\s+/.test(line)) { html += `<br>${inline(line.trim())}`; continue; } // continuación del elemento
+    flushAll(); para.push(inline(line));
+  }
+  if (code) html += `${esc(code.join("\n"))}</code></pre>`;
+  flushAll();
+  return html;
+}
 const team = id => TEAMS.find(t => t.id === id);
 const teamData = id => data[id] || { done: [], answers: {} };
 const scoreOf = id => Object.values(teamData(id).answers || {}).reduce((n, a) => n + (a.points || 0), 0);
@@ -70,10 +107,11 @@ function viewMap() {
     </section>
     ${Object.entries(LEVELS).map(([k, L]) => `
       <h2 class="act">${L.label} <small>${L.range}</small></h2>
+      ${k === "mid" && GUION.intro ? `<details class="intro"><summary>Contexto y reglas del Acto II</summary>${md(GUION.intro)}</details>` : ""}
       <div class="reel">
         ${EXERCISES.filter(e => e.level === k).map(e => {
           const ok = e.type === "task" ? teamData(teamId).done?.includes(e.id) : solved(teamId, e);
-          return `<a class="clap ${ok ? "ok" : ""} ${e.type}" href="#/ex/${e.id}"><span class="n">${e.id}</span><span class="t">${esc(e.title)}</span><span class="k">${e.type === "task" ? "git real" : e.type === "quiz" ? "quiz" : "ordenar"}${ok ? " ✓" : ""}</span></a>`;
+          return `<a class="clap ${ok ? "ok" : ""} ${e.type}" href="#/ex/${e.id}"><span class="n">${e.id}</span><span class="t">${inline(e.title)}</span><span class="k">${e.type === "task" ? "git real" : e.type === "quiz" ? "quiz" : "ordenar"}${ok ? " ✓" : ""}</span></a>`;
         }).join("")}
       </div>`).join("")}`;
 }
@@ -83,7 +121,7 @@ function viewExercise(id) {
   if (!ex) return (location.hash = "#/");
   const prev = EXERCISES.find(e => e.id === id - 1), next = EXERCISES.find(e => e.id === id + 1);
   const nav = `<div class="pager">${prev ? `<a class="btn ghost" href="#/ex/${prev.id}">← ${prev.id}</a>` : "<span></span>"}<a class="btn ghost" href="#/">Mapa</a>${next ? `<a class="btn ghost" href="#/ex/${next.id}">${next.id} →</a>` : "<span></span>"}</div>`;
-  const head = `<p class="muted">${LEVELS[ex.level].label} · Escena ${ex.id}</p><h1>${esc(ex.title)}</h1>${md(ex.body)}`;
+  const head = `<p class="muted">${LEVELS[ex.level].label} · Escena ${ex.id}${ex.minutes ? ` · ⏱ ${ex.minutes} min` : ""}</p><h1>${inline(ex.title)}</h1>${ex.commands ? `<p class="muted">Comandos: ${inline(ex.commands)}</p>` : ""}${md(ex.body)}`;
   let body = "";
 
   if (ex.type === "task") {
@@ -182,7 +220,7 @@ function render() {
 }
 
 (async () => {
-  store = await createStore();
+  [store] = await Promise.all([createStore(), loadGuion()]);
   if (store.mode === "local") { $banner.hidden = false; $banner.textContent = "Modo local: sin Firebase configurado, la clasificación solo se comparte entre pestañas de este navegador (ver js/config.js)."; }
   let first = true;
   store.subscribe(all => {

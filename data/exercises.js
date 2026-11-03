@@ -1,4 +1,5 @@
-// Contenido de la actividad. Los enunciados 1-20 son PLACEHOLDERS: sustituir `body` (admite `código` entre comillas invertidas).
+// Contenido de la actividad. Los enunciados 1-10 son PLACEHOLDERS: sustituir `body` (admite markdown básico).
+// Los enunciados 11-20 se cargan en runtime desde data/guion-11-20.md (ver loadGuion al final).
 // type: "task" (1-20, solo checklist) | "quiz" (opción múltiple) | "order" (ordenar comandos)
 
 export const TEAMS = [
@@ -101,3 +102,47 @@ export const EXERCISES = [
     steps: ["git stash", "git switch hotfix", "git switch -", "git stash pop"],
   },
 ];
+
+// Contexto común del Acto II (se rellena en loadGuion).
+export const GUION = { intro: "" };
+
+// Carga los guiones en markdown y sustituye título, enunciado, pista y duración de cada ejercicio encontrado.
+// Cabeceras aceptadas: "### Pregunta N: Título (Tiempo: X min)" o "### N. Título (`cmd1`, `cmd2`)".
+// Una línea final "> 💡 **Pistas...**: ..." se usa como pista. Si falla la carga se conservan los placeholders.
+export async function loadGuion(urls = ["data/guion-1-10.md", "data/guion-11-20.md"]) {
+  await Promise.all(urls.map(loadOne));
+}
+
+async function loadOne(url) {
+  let text;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(r.status);
+    text = (await r.text()).replace(/\r\n/g, "\n");
+  } catch (e) { console.warn("No se pudo cargar el guion", url, e); return; }
+
+  const re = /^### (?:Pregunta )?(\d+)[.:]\s*(.+?)\s*$/gm;
+  const heads = [...text.matchAll(re)];
+
+  // Introducción opcional: desde "### Contexto..." hasta la primera línea "---".
+  const ctx = text.match(/^### Contexto[^\n]*\n([\s\S]*?)\n---\s*$/m);
+  if (ctx) GUION.intro = ctx[1].trim();
+
+  heads.forEach((h, i) => {
+    const ex = EXERCISES.find(e => e.id === +h[1]);
+    if (!ex) return;
+    const end = i + 1 < heads.length ? heads[i + 1].index : text.length;
+    let body = text.slice(h.index + h[0].length, end).replace(/\n---\s*$/, "").trim();
+    const hint = body.match(/^>\s*💡\s*\*\*[^*]+\*\*:\s*(.*)$/m);
+    ex.hint = hint ? hint[1].trim() : undefined;
+    if (hint) body = body.slice(0, hint.index).trim();
+
+    let title = h[2];
+    const time = title.match(/\s*\(Tiempo:\s*(\d+)\s*min\)$/);
+    if (time) { ex.minutes = +time[1]; title = title.slice(0, time.index); }
+    const cmds = title.match(/\s*\((`[^)]*`)\)$/); // "(`git init`, `git status`)" -> comandos
+    if (cmds) { ex.commands = cmds[1]; title = title.slice(0, cmds.index); }
+    ex.title = title;
+    ex.body = body;
+  });
+}
