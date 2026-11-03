@@ -3,10 +3,10 @@
 // type: "task" (1-20, solo checklist) | "quiz" (opción múltiple) | "order" (ordenar comandos)
 
 export const TEAMS = [
-  { id: "a", name: "JAL",  color: "#ff4d6d", code: "ALFA" },
-  { id: "b", name: "Los ReBasados",  color: "#4dabf7", code: "BETA" },
-  { id: "c", name: "Escape Team", color: "#51cf66", code: "GAMMA" },
-  { id: "d", name: "Gitabama", color: "#ffd43b", code: "DELTA" },
+  { id: "a", name: "JAL",  color: "#c77dff", code: "ALFA" },
+  { id: "b", name: "Los ReBasados",  color: "#00e5ff", code: "BETA" },
+  { id: "c", name: "Escape Team", color: "#b6ff3b", code: "GAMMA" },
+  { id: "d", name: "Gitabama", color: "#ff9f1c", code: "DELTA" },
 ];
 
 export const LEVELS = {
