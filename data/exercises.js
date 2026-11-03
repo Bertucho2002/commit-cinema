@@ -116,7 +116,7 @@ export async function loadGuion(urls = ["data/guion-1-10.md", "data/guion-11-20.
 async function loadOne(url) {
   let text;
   try {
-    const r = await fetch(url);
+    const r = await fetch(url + "?v=2"); // mismo número de versión que en index.html
     if (!r.ok) throw new Error(r.status);
     text = (await r.text()).replace(/\r\n/g, "\n");
   } catch (e) { console.warn("No se pudo cargar el guion", url, e); return; }

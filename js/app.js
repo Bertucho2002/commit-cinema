@@ -1,6 +1,7 @@
-import { TEAMS, LEVELS, EXERCISES, GUION, loadGuion } from "../data/exercises.js";
-import { ADMIN_CODE } from "./config.js";
-import { createStore } from "./store.js";
+// ?v=N evita que la caché de GitHub Pages (10 min) sirva versiones antiguas: súbelo en cada despliegue y en index.html.
+import { TEAMS, LEVELS, EXERCISES, GUION, loadGuion } from "../data/exercises.js?v=2";
+import { ADMIN_CODE } from "./config.js?v=2";
+import { createStore } from "./store.js?v=2";
 
 const $app = document.getElementById("app");
 const $who = document.getElementById("who");
@@ -223,8 +224,11 @@ function render() {
   [store] = await Promise.all([createStore(), loadGuion()]);
   if (store.mode === "local") { $banner.hidden = false; $banner.textContent = "Modo local: sin Firebase configurado, la clasificación solo se comparte entre pestañas de este navegador (ver js/config.js)."; }
   let first = true;
+  render(); // primer pintado sin esperar a Firebase (el login ya no se repinta con cada dato)
   store.subscribe(all => {
     data = all || {};
+    // El login no depende de los datos: repintarlo borraría el equipo elegido y el código que se está escribiendo.
+    if (!teamId && location.hash !== "#/ranking") return;
     // No re-renderizar la vista de ejercicio si se está arrastrando/ordenando, salvo en la primera carga
     const inEx = /^#\/ex\//.test(location.hash);
     if (first || !inEx) render(); else syncExercise();
