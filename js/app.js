@@ -91,7 +91,7 @@ function viewLogin() {
   });
   form.onsubmit = e => {
     e.preventDefault();
-    if (form.code.value.trim().toUpperCase() === pick.code) { teamId = pick.id; safeSet("cc-team", teamId); location.hash = "#/"; }
+    if (form.code.value.trim().toUpperCase() === pick.code) { teamId = pick.id; safeSet("cc-team", teamId); location.hash = "#/"; render(); }
     else $app.querySelector("#codeErr").textContent = "Código incorrecto.";
   };
 }
