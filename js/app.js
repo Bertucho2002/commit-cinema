@@ -1,7 +1,7 @@
 // ?v=N evita que la caché de GitHub Pages (10 min) sirva versiones antiguas: súbelo en cada despliegue y en index.html.
-import { TEAMS, LEVELS, EXERCISES, GUION, loadGuion } from "../data/exercises.js?v=2";
-import { ADMIN_CODE } from "./config.js?v=2";
-import { createStore } from "./store.js?v=2";
+import { TEAMS, LEVELS, EXERCISES, GUION, loadGuion } from "../data/exercises.js?v=5";
+import { ADMIN_CODE } from "./config.js?v=5";
+import { createStore } from "./store.js?v=5";
 
 const $app = document.getElementById("app");
 const $who = document.getElementById("who");
@@ -16,7 +16,7 @@ function safeSet(k, v) { try { v == null ? localStorage.removeItem(k) : localSto
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 // Markdown mínimo: párrafos, listas numeradas/con viñetas (una anidación), bloques ``` , > citas, **negrita** y `código`.
-const inline = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?![*\w])/g, "$1<i>$2</i>");
+const inline = s => esc(s).replace(/``\s*(.+?)\s*``/g, "<code>$1</code>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?![*\w])/g, "$1<i>$2</i>");
 function md(src) {
   let html = "", para = [], quote = [], list = null, sub = false, li = false, code = null;
   const flushPara = () => { if (para.length) html += `<p>${para.join("<br>")}</p>`; para = []; };
@@ -108,7 +108,7 @@ function viewMap() {
     </section>
     ${Object.entries(LEVELS).map(([k, L]) => `
       <h2 class="act">${L.label} <small>${L.range}</small></h2>
-      ${k === "mid" && GUION.intro ? `<details class="intro"><summary>Contexto y reglas del Acto II</summary>${md(GUION.intro)}</details>` : ""}
+      ${GUION.intros[k] ? `<details class="intro"${k === "basic" ? " open" : ""}><summary>Contexto y reglas del ${L.label.split(" · ")[0]}</summary>${md(GUION.intros[k])}</details>` : ""}
       <div class="reel">
         ${EXERCISES.filter(e => e.level === k).map(e => {
           const ok = e.type === "task" ? teamData(teamId).done?.includes(e.id) : solved(teamId, e);

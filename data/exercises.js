@@ -103,8 +103,8 @@ export const EXERCISES = [
   },
 ];
 
-// Contexto común del Acto II (se rellena en loadGuion).
-export const GUION = { intro: "" };
+// Introducción de cada acto (clave = level), se rellena en loadGuion.
+export const GUION = { intros: {} };
 
 // Carga los guiones en markdown y sustituye título, enunciado, pista y duración de cada ejercicio encontrado.
 // Cabeceras aceptadas: "### Pregunta N: Título (Tiempo: X min)" o "### N. Título (`cmd1`, `cmd2`)".
@@ -116,7 +116,7 @@ export async function loadGuion(urls = ["data/guion-1-10.md", "data/guion-11-20.
 async function loadOne(url) {
   let text;
   try {
-    const r = await fetch(url + "?v=2"); // mismo número de versión que en index.html
+    const r = await fetch(url + "?v=5"); // mismo número de versión que en index.html
     if (!r.ok) throw new Error(r.status);
     text = (await r.text()).replace(/\r\n/g, "\n");
   } catch (e) { console.warn("No se pudo cargar el guion", url, e); return; }
@@ -124,9 +124,13 @@ async function loadOne(url) {
   const re = /^### (?:Pregunta )?(\d+)[.:]\s*(.+?)\s*$/gm;
   const heads = [...text.matchAll(re)];
 
-  // Introducción opcional: desde "### Contexto..." hasta la primera línea "---".
+  // Introducción opcional del acto: la sección "### Contexto..." (hasta la primera línea "---") o, si no existe,
+  // el texto que hay entre el título del documento y el primer ejercicio.
   const ctx = text.match(/^### Contexto[^\n]*\n([\s\S]*?)\n---\s*$/m);
-  if (ctx) GUION.intro = ctx[1].trim();
+  const pre = heads.length ? text.slice(0, heads[0].index).replace(/^#{1,2} .*$/gm, "").replace(/\n---\s*$/, "").trim() : "";
+  const intro = (ctx ? ctx[1] : pre).trim();
+  const level = EXERCISES.find(e => heads.length && e.id === +heads[0][1])?.level;
+  if (intro && level) GUION.intros[level] = intro;
 
   heads.forEach((h, i) => {
     const ex = EXERCISES.find(e => e.id === +h[1]);
