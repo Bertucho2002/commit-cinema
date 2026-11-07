@@ -44,62 +44,61 @@ export const EXERCISES = [
   task(18, "mid", "Reescribiendo la historia: git rebase"),
   task(19, "mid", "Guardar para luego: git stash"),
   task(20, "mid", "Estreno: git tag"),
-  // --- Acto III: cuestionarios (21-25)
+  // --- Acto III: gran final (21-30). Mezcla de quiz y ordenar comandos; `answer` = índice de la opción correcta.
   {
-    id: 21, level: "final", type: "quiz", points: 10, title: "¿Qué hace git add?",
-    body: "Elige la opción correcta.",
-    options: ["Crea un commit", "Mueve cambios al área de preparación (staging)", "Sube cambios al remoto", "Crea una rama"],
+    id: 21, level: "final", type: "quiz", points: 10, title: "¿Dónde están mis cambios?",
+    body: "Has añadido una película a `peliculas.json` y guardado el archivo, pero todavía no has ejecutado `git add`. ¿Dónde están esos cambios?",
+    options: ["Ya en el historial, confirmados", "En tu directorio de trabajo, modificados pero sin preparar", "En el remoto, en GitHub", "En la pila del `stash`"],
     answer: 1,
   },
   {
-    id: 22, level: "final", type: "quiz", points: 10, title: "HEAD",
-    body: "¿Qué es `HEAD`?",
-    options: ["La primera confirmación del repositorio", "Un puntero a la rama o commit actualmente en uso", "La rama remota por defecto", "El último tag creado"],
-    answer: 1,
+    id: 22, level: "final", type: "order", points: 15, title: "Estreno de la cartelera",
+    body: "Ordena los comandos para crear el repositorio de Commit_Cinema y guardar la plantilla de `peliculas.json`.",
+    steps: ["git init -b main", "git add peliculas.json", 'git commit -m "feat: agregar plantilla base de peliculas.json"', "git log --oneline"],
   },
   {
-    id: 23, level: "final", type: "quiz", points: 10, title: "Merge vs rebase",
-    body: "¿Cuál es una diferencia clave entre `git merge` y `git rebase`?",
-    options: ["Rebase reescribe la historia moviendo commits; merge crea un commit de fusión", "Merge borra la rama origen", "Rebase solo funciona con remotos", "No hay ninguna diferencia"],
+    id: 23, level: "final", type: "quiz", points: 10, title: "Una línea recta con rebase",
+    body: "Tras hacer `git rebase main` en `feature/correcciones` y fusionarla en `main`, el historial queda en línea recta. ¿Por qué?",
+    options: ["Porque Git borra la rama al fusionarla", "Porque `merge` siempre genera historiales lineales", "Porque `rebase` coloca los commits de la rama encima de `main` y el merge es un *fast-forward*", "Porque se usa `--force`"],
+    answer: 2,
+  },
+  {
+    id: 24, level: "final", type: "quiz", points: 10, title: "El distribuidor retira la película",
+    body: "El commit que añadió *The Texas Chainsaw Merge* ya está en el historial y el distribuidor retira la película. Quieres deshacerlo dejando constancia, sin borrar nada. ¿Qué haces?",
+    options: ["`git reset --hard HEAD~1` y después `git push --force`", "Borrar la carpeta `.git` y empezar de nuevo", "`git branch -D main`", "`git revert <hash>`"],
+    answer: 3,
+  },
+  {
+    id: 25, level: "final", type: "order", points: 15, title: "Push rechazado",
+    body: "Has hecho commit de la portada de *El Grinch*, pero tu compañero A subió cambios antes que tú. Ordena lo que ocurre hasta que tu push es aceptado.",
+    steps: ['git commit -m "feat: portada de El Grinch"', "git push origin feature/cartelera-navidad   # rechazado", "git pull origin feature/cartelera-navidad", "git push origin feature/cartelera-navidad   # aceptado"],
+  },
+  {
+    id: 26, level: "final", type: "quiz", points: 10, title: "Una urgencia en mitad del trabajo",
+    body: "Tienes cambios sin confirmar en `index.html` y necesitas cambiar de rama un momento. ¿Qué comando los guarda de forma temporal y deja el directorio limpio?",
+    options: ["`git stash`", "`git revert HEAD`", "`git reset --hard`", "`git branch -d`"],
     answer: 0,
   },
   {
-    id: 24, level: "final", type: "quiz", points: 10, title: "Deshacer con seguridad",
-    body: "Un commit ya está publicado en `origin`. ¿Cómo lo deshaces sin reescribir historia compartida?",
-    options: ["`git reset --hard` y `git push --force`", "`git revert <commit>`", "`git rebase -i` y borrar la línea", "Borrar la carpeta `.git`"],
-    answer: 1,
+    id: 27, level: "final", type: "order", points: 15, title: "Conflicto en el Hero Banner",
+    body: "Al fusionar `feature/decoracion-navidad` en `main`, Git avisa de un conflicto en `index.html`. Ordena la resolución.",
+    steps: ["git merge feature/decoracion-navidad   # CONFLICTO", "(editar index.html: dejar una sola línea y borrar <<<<<<<, ======= y >>>>>>>)", "git add index.html", 'git commit -m "merge: resolver conflicto del titulo"'],
   },
   {
-    id: 25, level: "final", type: "quiz", points: 10, title: "Fetch vs pull",
-    body: "`git pull` equivale a…",
-    options: ["`git fetch` + `git merge` (o rebase)", "`git push` + `git fetch`", "`git clone` + `git checkout`", "`git stash` + `git apply`"],
-    answer: 0,
-  },
-  // --- Acto III: ordenar comandos (26-30)
-  {
-    id: 26, level: "final", type: "order", points: 15, title: "Primer commit",
-    body: "Ordena los comandos para crear un repo y hacer tu primer commit.",
-    steps: ["git init", "git add README.md", 'git commit -m "Primer commit"'],
+    id: 28, level: "final", type: "order", points: 15, title: "Solo el código promocional",
+    body: "Estás en `main` y quieres traer únicamente el commit de la promo que hizo B en `origin/experimento/promo`. Ordena los comandos.",
+    steps: ["git fetch", "git log origin/experimento/promo --oneline -n 1   # copiar el hash", "git cherry-pick <hash>", "git push"],
   },
   {
-    id: 27, level: "final", type: "order", points: 15, title: "Rama de feature",
-    body: "Crea una rama, haz un cambio y fusiónalo en main.",
-    steps: ["git switch -c escena-extra", "git add .", 'git commit -m "Añade escena extra"', "git switch main", "git merge escena-extra"],
+    id: 29, level: "final", type: "quiz", points: 10, title: "Etiqueta de versión",
+    body: "¿Para qué sirve la etiqueta anotada `v2.0.0-navidad`?",
+    options: ["Crea una rama nueva para la campaña de Navidad", "Sube los cambios a GitHub", "Marca un punto concreto del historial como versión, con autor, fecha y mensaje", "Fusiona dos ramas"],
+    answer: 2,
   },
   {
-    id: 28, level: "final", type: "order", points: 15, title: "Resolver conflicto",
-    body: "Un merge ha dado conflicto. Ordena la resolución.",
-    steps: ["git merge otra-rama", "(editar el fichero y quitar las marcas <<<<<<<)", "git add guion.txt", "git commit"],
-  },
-  {
-    id: 29, level: "final", type: "order", points: 15, title: "Colaborar con GitHub",
-    body: "Ordena el flujo para subir una contribución.",
-    steps: ["git clone <url>", "git switch -c mi-cambio", 'git commit -am "Mi cambio"', "git push -u origin mi-cambio"],
-  },
-  {
-    id: 30, level: "final", type: "order", points: 15, title: "Salvar el trabajo a medias",
-    body: "Estás a medias y debes cambiar de rama un momento.",
-    steps: ["git stash", "git switch hotfix", "git switch -", "git stash pop"],
+    id: 30, level: "final", type: "order", points: 15, title: "Lanzamiento de la campaña",
+    body: "Ordena los comandos para publicar la versión `v2.0.0-navidad` de la web y comprobar el resultado al final.",
+    steps: ["git switch main", 'git tag -a v2.0.0-navidad -m "Lanzamiento oficial de la web navidena"', "git push origin main --tags", "git log --oneline --graph --all --decorate"],
   },
 ];
 
@@ -116,7 +115,7 @@ export async function loadGuion(urls = ["data/guion-1-10.md", "data/guion-11-20.
 async function loadOne(url) {
   let text;
   try {
-    const r = await fetch(url + "?v=5"); // mismo número de versión que en index.html
+    const r = await fetch(url + "?v=6"); // mismo número de versión que en index.html
     if (!r.ok) throw new Error(r.status);
     text = (await r.text()).replace(/\r\n/g, "\n");
   } catch (e) { console.warn("No se pudo cargar el guion", url, e); return; }
